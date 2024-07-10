@@ -1,0 +1,341 @@
+#include<iostream>
+#include<conio.h>
+#include <windows.h>
+#include <time.h>
+
+using namespace std;
+
+HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+COORD CursorPosition;
+
+int enemyY[3];
+int enemyX[3];
+int enemyFlag[3];
+char car[5][4] = { ' ','.','.',' ',
+                   '0','±','±','0',
+                   ' ','±','±',' ',
+                   '0','±','±','0' };
+
+char enemyDesigns[4][5][4] = {
+    {
+        '0','±','±','0',
+        ' ','±','±',' ',
+        '0','±','±','0',
+        ' ','.','.',' ',
+    },
+    {
+        '0','±','±','0',
+        ' ','±','±',' ',
+        '0','±','±','0',
+        ' ','.','.',' ',
+    },
+    {
+        '0','±','±','0',
+        ' ','±','±',' ',
+        '0','±','±','0',
+        ' ','.','.',' ',
+    },
+     {
+        '0','±','±','0',
+        ' ','±','±',' ',
+        '0','±','±','0',
+        ' ','.','.',' ',
+    },
+};
+
+int carPos = 37;
+int carPosY = 23;
+int score = 0;
+
+bool checkCollisionWithOtherEnemies(int ind, int newX, int newY) {
+    for (int i = 0; i < ind; i++) {
+        if (enemyFlag[i] && newX < enemyX[i] + 4 && newX + 4 > enemyX[i] && newY < enemyY[i] + 4 && newY + 4 > enemyY[i]) {
+            return true;  // Collision detected with another enemy
+        }
+    }
+    return false;  // No collision with other enemies
+}
+
+void gotoxy(int x, int y) {
+    CursorPosition.X = x;
+    CursorPosition.Y = y;
+    SetConsoleCursorPosition(console, CursorPosition);
+}
+
+void setcursor(bool visible, DWORD size) {
+    if (size == 0)
+        size = 20;
+
+    CONSOLE_CURSOR_INFO lpCursor;
+    lpCursor.bVisible = visible;
+    lpCursor.dwSize = size;
+    SetConsoleCursorInfo(console, &lpCursor);
+}
+void drawBorder() {
+   // char ch = 255;
+    for (int i = 0; i < 30; i++) {
+        gotoxy(0, i);
+        cout << "||";
+        gotoxy(59, i);  // Reduced the width to 59
+        cout << "|";
+    }
+
+    int gap = 3;  // Adjust the gap between vertical broken lines
+
+    for (int i = 0; i < 30; i++) {
+        if (i % gap == 0) {
+            gotoxy(28, i);  // Place the broken line in the middle (adjust as needed)
+            cout << "|";
+        }
+
+    }
+    for (int i = 0; i < 30; i++) {
+        if (i % gap == 0) {
+            gotoxy(50, i);  // Place the broken line in the middle (adjust as needed)
+            cout << "|";
+        }
+
+    }
+      for (int i = 0; i < 30; i++) {
+        if (i % gap == 0) {
+            gotoxy(10, i);  // Place the broken line in the middle (adjust as needed)
+            cout << "|";
+        }
+
+    }
+
+
+    for (int i = 0; i < 30; i++) {
+        gotoxy(17, i);
+        cout << "||";
+        gotoxy(39, i);
+        cout << "||";
+        gotoxy(58, i);
+        cout << "||";
+    }
+}
+
+
+
+void genEnemy(int ind) {
+    int newX, newY;
+
+    do {
+        newX = 1 + rand() % 58;  // Adjusted the width to 58
+        newY = 1;
+    } while (newX < 4|| newX > 54 || checkCollisionWithOtherEnemies(ind, newX, newY));
+
+    enemyX[ind] = newX;
+    enemyY[ind] = newY;
+}
+
+// ... (rest of the code remains unchanged)
+
+void drawEnemy(int ind) {
+    if (enemyFlag[ind] == true) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                gotoxy(enemyX[ind] + j, enemyY[ind] + i);
+                cout << enemyDesigns[ind][i][j];
+            }
+        }
+    }
+}
+
+void eraseEnemy(int ind) {
+    if (enemyFlag[ind] == true) {
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                gotoxy(enemyX[ind] + j, enemyY[ind] + i);
+                cout << " ";
+            }
+        }
+    }
+}
+
+void resetEnemy(int ind) {
+    eraseEnemy(ind);
+    genEnemy(ind);
+}
+
+void drawCar() {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            gotoxy(j + carPos, i + carPosY);
+            cout << car[i][j];
+        }
+    }
+}
+
+void eraseCar() {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            gotoxy(j + carPos, i + carPosY);
+            cout << " ";
+        }
+    }
+}
+
+// ... (previous code)
+
+// ... (previous code)
+
+int collision() {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (carPosY + i >= enemyY[0] && carPosY + i < enemyY[0] + 4 &&
+                carPos + j >= enemyX[0] && carPos + j < enemyX[0] + 4 &&
+                car[i][j] != ' ') {
+                return 1;  // Collision with enemy 0
+            }
+        }
+    }
+
+    for (int k = 1; k < 3; k++) {
+        if (enemyFlag[k]) {
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if (carPosY + i >= enemyY[k] && carPosY + i < enemyY[k] + 4 &&
+                        carPos + j >= enemyX[k] && carPos + j < enemyX[k] + 4 &&
+                        car[i][j] != ' ') {
+                        return 1;  // Collision with other enemies
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;  // No collision with player or other enemies
+}
+
+// ... (rest of the code)
+
+void gameover() {
+  /*  system("cls");
+    cout << endl;
+    gotoxy(35, 8);
+    cout << "\t\t| ----------------------------------------------------- |" << endl;
+    gotoxy(35, 9);
+    cout << "\t\t| -------- You Crashed! Try Again, You did Well!------- |" << endl;
+    gotoxy(35, 10);
+    cout << "\t\t|------------------------------------------------------|" << endl << endl;
+
+  */  gotoxy(35, 11);
+    cout << "Your total score is: " << score;
+    gotoxy(35, 12);
+    cout << "\t\tPress any key to go back to the menu.";
+    getch();
+}
+
+void updateScore() {
+    gotoxy(85, 5);
+    cout <<  "      Score:    " << score << "                      ";
+}
+
+void instructions() {
+    system("cls");
+    cout << "Instructions";
+    cout << "\n----------------";
+    cout << "\n Avoid Cars by moving left or right. ";
+    cout << "\n\n Press 'a' to move left";
+    cout << "\n Press 'd' to move right";
+    cout << "\n Press 'escape' to exit";
+    cout << "\n\nPress any key to go back to the menu";
+    getch();
+}
+
+void play() {
+    carPos = 37;
+    carPosY = 23;
+    score = 0;
+    int numEnemies = 4;  // Increased the number of enemies to 4
+
+    for (int i = 0; i < numEnemies; i++) {
+        enemyFlag[i] = 1;
+        genEnemy(i);
+    }
+
+    system("cls");
+    drawBorder();
+    updateScore();
+/*
+    gotoxy(85, 2);
+    cout << "Carventure!";
+    gotoxy(85, 4);
+    cout << "--------------------------";
+    gotoxy(85, 6);
+    cout << "--------------------------";
+    gotoxy(85, 12);
+    cout << "Controls ";
+    gotoxy(85, 13);
+    cout << "-------- ";
+    gotoxy(85, 14);
+    cout << " Press A Key - to Left";
+    gotoxy(85, 15);
+    cout << " Press D Key - to Right";
+
+    gotoxy(85, 5);
+    cout << "Press any key to start the game!";
+    getch();
+    gotoxy(85, 5);
+    cout << "                      ";
+*/
+    while (1) {
+        if (kbhit()) {
+            char ch = getch();
+            if (ch == 'a' || ch == 'A') {
+                if (carPos > 2)
+                    carPos -= 3;
+            }
+            if (ch == 'd' || ch == 'D') {
+                if (carPos < 54)
+                    carPos += 3;
+            }
+            if (ch == 27) {
+                break;
+            }
+        }
+
+        drawCar();
+        for (int i = 0; i < numEnemies; i++) {
+            drawEnemy(i);
+            if (collision() == 1) {
+                gameover();
+                return;
+            }
+        }
+
+        Sleep(30);
+        eraseCar();
+        for (int i = 0; i < numEnemies; i++) {
+            eraseEnemy(i);
+        }
+
+        for (int i = 0; i < numEnemies; i++) {
+            if (enemyY[i] == 10 && enemyFlag[i] == 0) {
+                enemyFlag[i] = 1;
+                genEnemy(i);
+            }
+
+            if (enemyFlag[i] == 1)
+                enemyY[i] += 2;  // Increase speed
+
+            if (enemyY[i] > 23) {
+                resetEnemy(i);
+                score++;
+                updateScore();
+            }
+        }
+
+        drawBorder();
+    }
+}
+
+int main() {
+    setcursor(0, 0);
+    srand((unsigned)time(NULL));
+
+    play();
+
+    return 0;
+}
